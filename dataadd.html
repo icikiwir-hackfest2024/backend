@@ -1,0 +1,40 @@
+<!-- dataadd.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Product</title>
+</head>
+<body>
+  <h1>Add Product</h1>
+  <form id="addProductForm">
+    <label for="productName">Product Name:</label>
+    <input type="text" id="productName" required><br><br>
+    <label for="productPrice">Product Price:</label>
+    <input type="number" id="productPrice" required><br><br>
+    <button type="submit">Add Product</button>
+  </form>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js" type="module"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js" type="module"></script>
+  <script src="./script/firebaseFunctions.js" type="module"></script>
+  <script type="module">
+    import { addNewProduct } from "./script/firebaseFunctions.js";
+
+    const addProductForm = document.getElementById('addProductForm');
+    addProductForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const productName = document.getElementById('productName').value;
+      const productPrice = parseFloat(document.getElementById('productPrice').value);
+
+      if (productName && productPrice) {
+        await addNewProduct(productName, productPrice);
+        alert('Product added successfully!');
+        addProductForm.reset();
+      } else {
+        alert('Please fill in all fields!');
+      }
+    });
+  </script>
+</body>
+</html>
