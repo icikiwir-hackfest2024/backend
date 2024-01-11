@@ -27,16 +27,20 @@ const showShoppingCart = async () => {
         ${cartItem.quantity}
         <button onclick="updateCartItemQuantity('${cartItem.id}', ${cartItem.quantity + 1})">+</button>
         <button onclick="removeFromCart('${cartItem.id}')">Remove from Cart</button>
-        Price: $${productPrice.toFixed(2)}
+        Price: ${formatRupiah(productPrice)}
       `;
       shoppingCartList.appendChild(cartItemLi);
     }
 
-    // Tampilkan total harga di dalam elemen HTML
-    totalPriceElement.textContent = `Total Price: $${totalPrice.toFixed(2)}`;
+    totalPriceElement.textContent = `Total Price: ${formatRupiah(totalPrice)}`;
   } catch (error) {
     console.error("Error showing shopping cart contents:", error);
   }
+};
+
+// Fungsi untuk mengonversi angka menjadi format mata uang Rupiah
+const formatRupiah = (number) => {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(number);
 };
 
 // Fungsi untuk menghitung harga total produk
@@ -45,16 +49,16 @@ const calculateProductPrice = async (cartItem) => {
     const products = await selectProduct(cartItem.id);
 
     if (products && products.length > 0) {
-      const product = products[0]; // Ambil produk pertama dari array
+      const product = products[0];
       if (typeof product.price === "number") {
         return product.price * cartItem.quantity;
       } else {
         console.error("Invalid product price:", product);
-        return 0; // Atau nilai default lainnya jika harga tidak valid
+        return 0;
       }
     } else {
       console.error("Product not found:", cartItem.id);
-      return 0; // Atau nilai default lainnya jika produk tidak ditemukan
+      return 0;
     }
   } catch (error) {
     console.error("Error calculating product price:", error);
@@ -72,8 +76,9 @@ window.addToShoppingCart = async (productId, quantity) => {
     }
 
     const product = await selectProduct(productId);
-    if (product) {
-      await addToCart(productId, quantity);
+    if (product && product.length > 0) {
+      const price = product[0].price;  // Mengambil harga dari produk yang sesuai
+      await addToCart(productId, quantity, price);
       alert(`Added ${quantity} product(s) to shopping cart!`);
       showShoppingCart();
     } else {
@@ -84,18 +89,47 @@ window.addToShoppingCart = async (productId, quantity) => {
   }
 };
 
-const addToCart = async (productId, quantity) => {
+
+// Fungsi untuk mengurangi atau menambah quantity barang di keranjang
+window.updateCartItemQuantity = async (productId, newQuantity) => {
+  try {
+    // Validasi: Pastikan newQuantity lebih besar dari 0
+    if (newQuantity < 1) {
+      alert("Please enter a quantity greater than 0.");
+      return;
+    }
+
+    const cartRef = doc(firestore, "cart", productId);
+    const cartDoc = await getDoc(cartRef);
+
+    if (cartDoc.exists()) {
+      const { price } = cartDoc.data();
+
+      // Pastikan price selalu tersedia
+      if (price === undefined) {
+        console.error("Invalid price for cart item:", cartDoc.data());
+        return;
+      }
+
+      // Update quantity dengan nilai baru
+      await setDoc(cartRef, { productId, quantity: parseInt(newQuantity), price });
+      showShoppingCart(); // Tampilkan keranjang belanja setelah diupdate
+    }
+  } catch (error) {
+    console.error("Error updating cart item quantity:", error);
+  }
+};
+
+const addToCart = async (productId, quantity, price) => {
   try {
     const cartRef = doc(firestore, "cart", productId);
     const cartDoc = await getDoc(cartRef);
 
     if (cartDoc.exists()) {
-      // Jika produk sudah ada di keranjang, tambahkan ke jumlah yang ada
       const currentQuantity = cartDoc.data().quantity || 0;
-      await setDoc(cartRef, { productId, quantity: currentQuantity + parseInt(quantity) });
+      await setDoc(cartRef, { productId, quantity: currentQuantity + parseInt(quantity), price });
     } else {
-      // Jika produk belum ada di keranjang, tambahkan produk baru
-      await setDoc(cartRef, { productId, quantity: parseInt(quantity) });
+      await setDoc(cartRef, { productId, quantity: parseInt(quantity), price });
     }
 
     console.log("Product added to cart successfully!");
@@ -104,23 +138,41 @@ const addToCart = async (productId, quantity) => {
   }
 };
 
-const selectProduct = async () => {
+const selectProduct = async (productId) => {
   try {
     const productsCollection = collection(firestore, "products");
-    const productsSnapshot = await getDocs(productsCollection);
-    const products = [];
 
-    productsSnapshot.forEach((doc) => {
-      products.push({
-        id: doc.id,
-        ...doc.data(),
+    if (productId) {
+      // Jika ID produk diberikan, ambil data produk spesifik
+      const productDoc = doc(productsCollection, productId);
+      const productSnapshot = await getDoc(productDoc);
+
+      if (productSnapshot.exists()) {
+        return [{
+          id: productSnapshot.id,
+          ...productSnapshot.data(),
+        }];
+      } else {
+        console.error("Product not found:", productId);
+        return null; // Mengembalikan null jika produk tidak ditemukan
+      }
+    } else {
+      // Jika tidak ada ID produk, ambil seluruh daftar produk
+      const productsSnapshot = await getDocs(productsCollection);
+      const products = [];
+
+      productsSnapshot.forEach((doc) => {
+        products.push({
+          id: doc.id,
+          ...doc.data(),
+        });
       });
-    });
 
-    return products;
+      return products;
+    }
   } catch (error) {
-    console.error("Error selecting products:", error);
-    return [];
+    console.error("Error selecting product:", error);
+    return null; // Mengembalikan null jika terjadi kesalahan
   }
 };
 
@@ -158,12 +210,12 @@ const displayProducts = async () => {
       const productDiv = document.createElement("div");
       productDiv.innerHTML = `
         <p><strong>${product.name}</strong></p>
-        <p>Harga: $${product.price.toFixed(2)}</p>
+        <p>Harga: ${formatRupiah(product.price)}</p>
         <p>Stock: ${product.stock}</p>
         <p>Deskripsi: ${product.description}</p>
-        <button onclick="addToShoppingCart('${product.id}', 1)">Add to Cart</button>
+        <button onclick="addToShoppingCart('${product.id}', 1, ${product.price})">Add to Cart</button>
         <input type="number" id="quantityInput_${product.id}" placeholder="Quantity" />
-        <button onclick="addToShoppingCart('${product.id}', document.getElementById('quantityInput_${product.id}').value)">Add to Cart</button>
+        <button onclick="addToShoppingCart('${product.id}', document.getElementById('quantityInput_${product.id}').value, ${product.price})">Add to Cart</button>
         <hr>
       `;
       productListDiv.appendChild(productDiv);
