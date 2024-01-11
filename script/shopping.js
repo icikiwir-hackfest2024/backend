@@ -7,6 +7,7 @@ const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
 
 // Fungsi untuk menampilkan isi keranjang belanja
+// Fungsi untuk menampilkan isi keranjang belanja
 const showShoppingCart = async () => {
   const shoppingCartList = document.getElementById("shoppingCart");
   const totalPriceElement = document.getElementById("totalPrice");
@@ -62,17 +63,26 @@ const showShoppingCart = async () => {
     // Tambahkan event listener untuk tombol "Remove from Cart" setelah pembaruan
     const removeFromCartButtons = document.getElementsByClassName("removeFromCartButton");
     for (const button of removeFromCartButtons) {
-      button.addEventListener("click", async function () {
+      button.addEventListener("click", function () {
         const productId = this.getAttribute("data-product-id");
-        await removeFromCart(productId);
-        console.log("Product removed from cart successfully!");
-        await showShoppingCart(); // Tampilkan keranjang belanja setelah diupdate
+        showRemoveConfirmation(productId);
       });
     }
 
     totalPriceElement.textContent = `Total Price: ${formatRupiah(totalPrice)}`;
   } catch (error) {
     console.error("Error showing shopping cart contents:", error);
+  }
+};
+
+// Fungsi untuk menampilkan konfirmasi sebelum menghapus dari keranjang
+const showRemoveConfirmation = (productId) => {
+  const confirmRemove = confirm("Are you sure you want to remove this product from the cart?");
+
+  if (confirmRemove) {
+    removeFromCart(productId);
+    console.log("Product removed from cart successfully!");
+    showShoppingCart(); // Tampilkan keranjang belanja setelah diupdate
   }
 };
 
