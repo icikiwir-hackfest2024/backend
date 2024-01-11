@@ -10,26 +10,64 @@ const firestore = getFirestore(app);
 const showShoppingCart = async () => {
   const shoppingCartList = document.getElementById("shoppingCart");
   const totalPriceElement = document.getElementById("totalPrice");
-  shoppingCartList.innerHTML = "";
 
   try {
     const cartContents = await showCartContents();
     let totalPrice = 0;
 
-    for (const cartItem of cartContents) {
-      const cartItemLi = document.createElement("li");
-      const productPrice = await calculateProductPrice(cartItem);
-      totalPrice += productPrice;
+    // Simpan referensi ke elemen-elemen daftar belanja yang sudah ada sebelumnya
+    const existingCartItems = Array.from(shoppingCartList.children);
 
-      cartItemLi.innerHTML = `
-        Product ID: ${cartItem.id}, Quantity: 
-        <button onclick="updateCartItemQuantity('${cartItem.id}', ${cartItem.quantity - 1})">-</button>
-        ${cartItem.quantity}
-        <button onclick="updateCartItemQuantity('${cartItem.id}', ${cartItem.quantity + 1})">+</button>
-        <button onclick="removeFromCart('${cartItem.id}')">Remove from Cart</button>
-        Price: ${formatRupiah(productPrice)}
-      `;
-      shoppingCartList.appendChild(cartItemLi);
+    for (const cartItem of cartContents) {
+      const existingCartItem = existingCartItems.find((item) => item.dataset.productId === cartItem.id);
+
+      // Jika item sudah ada, perbarui saja
+      if (existingCartItem) {
+        const productPrice = await calculateProductPrice(cartItem);
+        totalPrice += productPrice;
+        existingCartItem.innerHTML = `
+          Product ID: ${cartItem.id}, Quantity: 
+          <button onclick="updateCartItemQuantity('${cartItem.id}', ${cartItem.quantity - 1})">-</button>
+          ${cartItem.quantity}
+          <button onclick="updateCartItemQuantity('${cartItem.id}', ${cartItem.quantity + 1})">+</button>
+          <button class="removeFromCartButton" data-product-id="${cartItem.id}">Remove from Cart</button>
+          Price: ${formatRupiah(productPrice)}
+        `;
+      } else {
+        // Jika item belum ada, tambahkan item baru
+        const cartItemLi = document.createElement("li");
+        const productPrice = await calculateProductPrice(cartItem);
+        totalPrice += productPrice;
+        cartItemLi.dataset.productId = cartItem.id;
+        cartItemLi.innerHTML = `
+          Product ID: ${cartItem.id}, Quantity: 
+          <button onclick="updateCartItemQuantity('${cartItem.id}', ${cartItem.quantity - 1})">-</button>
+          ${cartItem.quantity}
+          <button onclick="updateCartItemQuantity('${cartItem.id}', ${cartItem.quantity + 1})">+</button>
+          <button class="removeFromCartButton" data-product-id="${cartItem.id}">Remove from Cart</button>
+          Price: ${formatRupiah(productPrice)}
+        `;
+        shoppingCartList.appendChild(cartItemLi);
+      }
+    }
+
+    // Hapus elemen-elemen yang sudah tidak ada di keranjang belanja
+    existingCartItems.forEach((existingCartItem) => {
+      const existingProductId = existingCartItem.dataset.productId;
+      if (!cartContents.some((cartItem) => cartItem.id === existingProductId)) {
+        existingCartItem.remove();
+      }
+    });
+
+    // Tambahkan event listener untuk tombol "Remove from Cart" setelah pembaruan
+    const removeFromCartButtons = document.getElementsByClassName("removeFromCartButton");
+    for (const button of removeFromCartButtons) {
+      button.addEventListener("click", async function () {
+        const productId = this.getAttribute("data-product-id");
+        await removeFromCart(productId);
+        console.log("Product removed from cart successfully!");
+        await showShoppingCart(); // Tampilkan keranjang belanja setelah diupdate
+      });
     }
 
     totalPriceElement.textContent = `Total Price: ${formatRupiah(totalPrice)}`;
@@ -77,7 +115,7 @@ window.addToShoppingCart = async (productId, quantity) => {
 
     const product = await selectProduct(productId);
     if (product && product.length > 0) {
-      const price = product[0].price;  // Mengambil harga dari produk yang sesuai
+      const price = product[0].price;
       await addToCart(productId, quantity, price);
       alert(`Added ${quantity} product(s) to shopping cart!`);
       showShoppingCart();
@@ -89,14 +127,19 @@ window.addToShoppingCart = async (productId, quantity) => {
   }
 };
 
-
 // Fungsi untuk mengurangi atau menambah quantity barang di keranjang
 window.updateCartItemQuantity = async (productId, newQuantity) => {
   try {
     // Validasi: Pastikan newQuantity lebih besar dari 0
     if (newQuantity < 1) {
-      alert("Please enter a quantity greater than 0.");
-      return;
+      const confirmRemove = confirm("Are you sure you want to remove this product from the cart?");
+
+      if (confirmRemove) {
+        await removeFromCart(productId);
+        console.log("Product removed from cart successfully!");
+        showShoppingCart(); // Tampilkan keranjang belanja setelah diupdate
+      }
+      return; // Keluar dari fungsi jika pengguna memilih "Cancel"
     }
 
     const cartRef = doc(firestore, "cart", productId);
@@ -148,10 +191,12 @@ const selectProduct = async (productId) => {
       const productSnapshot = await getDoc(productDoc);
 
       if (productSnapshot.exists()) {
-        return [{
-          id: productSnapshot.id,
-          ...productSnapshot.data(),
-        }];
+        return [
+          {
+            id: productSnapshot.id,
+            ...productSnapshot.data(),
+          },
+        ];
       } else {
         console.error("Product not found:", productId);
         return null; // Mengembalikan null jika produk tidak ditemukan
@@ -210,9 +255,9 @@ const displayProducts = async () => {
       const productDiv = document.createElement("div");
       productDiv.innerHTML = `
         <p><strong>${product.name}</strong></p>
-        <p>Harga: ${formatRupiah(product.price)}</p>
+        <p>Price: ${formatRupiah(product.price)}</p>
         <p>Stock: ${product.stock}</p>
-        <p>Deskripsi: ${product.description}</p>
+        <p>Description: ${product.description}</p>
         <button onclick="addToShoppingCart('${product.id}', 1, ${product.price})">Add to Cart</button>
         <input type="number" id="quantityInput_${product.id}" placeholder="Quantity" />
         <button onclick="addToShoppingCart('${product.id}', document.getElementById('quantityInput_${product.id}').value, ${product.price})">Add to Cart</button>
@@ -226,23 +271,12 @@ const displayProducts = async () => {
 };
 
 // Fungsi untuk menghapus produk dari keranjang
-window.removeFromCart = async (productId) => {
+const removeFromCart = async (productId) => {
   try {
     const cartRef = doc(firestore, "cart", productId);
-    const cartDoc = await getDoc(cartRef);
-
-    if (cartDoc.exists()) {
-      // Tampilkan konfirmasi umum kepada pengguna
-      const confirmRemove = confirm("Are you sure you want to remove this product from the cart?");
-
-      if (!confirmRemove) {
-        return; // Batal menghapus jika pengguna memilih "Cancel"
-      }
-
-      await deleteDoc(cartRef);
-      console.log("Product removed from cart successfully!");
-      showShoppingCart();
-    }
+    await deleteDoc(cartRef);
+    console.log("Product removed from cart successfully!");
+    await showShoppingCart();
   } catch (error) {
     console.error("Error removing product from cart:", error);
   }
