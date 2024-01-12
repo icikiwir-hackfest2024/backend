@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Product Listing</title>
+</head>
+<body>
+  <h1>Product Listing</h1>
+
+  <div id="productList">
+    <!-- Produk akan ditampilkan di sini -->
+  </div>
+
+  <h2>Shopping Cart</h2>
+  <ul id="shoppingCart">
+    <!-- Keranjang belanja akan ditampilkan di sini -->
+  </ul>
+
+  <div id="totalPrice">
+    <!-- Total harga akan ditampilkan di sini -->
+  </div>
+
+  <!-- Tombol Checkout -->
+  <button onclick="checkout()">Checkout</button>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js" type="module"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js" type="module"></script>
+  <script src="./script/shopping.js" type="module"></script>
+</body>
+</html>
