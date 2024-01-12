@@ -15,9 +15,8 @@ Platform Pemasaran Hasil Pertanian Langsung dari Petani ke Konsumen adalah solus
 - [firebase](https://github.com/icikiwir-hackfest2024/greenbasket/tree/firebase)
 
 ### Screenshots
-![image](https://github.com/icikiwir-hackfest2024/greenbasket/assets/7505740/468f531d-2a10-461b-b9d9-cc3c457e2b2f)
+![image](https://github.com/icikiwir-hackfest2024/greenbasket/assets/7505740/9121fb18-252f-4c6f-b21c-a1ba69dbfe93)
 _Firebase Console_
 
 ![image](https://github.com/icikiwir-hackfest2024/greenbasket/assets/7505740/120d863c-78a5-41ad-a7e4-c337eafe7161)
 _Firestore Database_
-
