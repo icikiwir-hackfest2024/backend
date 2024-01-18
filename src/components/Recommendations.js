@@ -13,8 +13,6 @@ export default function Recommendations() {
       <div className="flex w-screen p-4 -m-4 overflow-scroll">
         <div className="flex gap-4">
           <CardItem />
-          <CardItem />
-          <CardItem />
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ export default function SearchBar() {
           type="search"
           placeholder="Search"
           containerProps={{
-            className: "min-w-[288px]",
+            className: "min-w-[288px] md:min-w-0 xl:min-w-[1450px]",
           }}
           className=" !border-t-blue-gray-300 pl-9 placeholder:text-blue-gray-300 focus:!border-blue-gray-300"
           labelProps={{
@@ -17,7 +17,7 @@ export default function SearchBar() {
         />
         <div className="!absolute left-3 top-[13px]">
           <svg
-            width="13"
+            width="16"
             height="14"
             viewBox="0 0 14 15"
             fill="none"

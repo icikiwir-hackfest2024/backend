@@ -13,7 +13,7 @@ export default function Categories() {
       >
         KATEGORI PRODUK LOKAL
       </Typography>
-      <div className="flex flex-wrap gap-4 justify-around">
+      <div className="flex flex-wrap gap-3 justify-around mt-5 mb-1">
         <a href="#" className="bg-gray-200 flex flex-col justify-between text-center w-36 h-32 px-2 py-4 rounded-lg shadow-md">
           <FontAwesomeIcon icon={faWheatAwn} className="h-16 w-full" />
           <Typography variant="paragraph" className="font-semibold">Hasil Tani</Typography>
@@ -29,10 +29,6 @@ export default function Categories() {
         <a href="#" className="bg-gray-200 flex flex-col justify-between text-center w-36 h-32 px-2 py-4 rounded-lg shadow-md">
           <FontAwesomeIcon icon={faPlateWheat} className="h-16 w-full" />
           <Typography variant="paragraph" className="font-semibold">Olahan</Typography>
-        </a>
-        <a href="#" className="bg-gray-200 flex flex-col justify-between text-center w-36 h-32 px-2 py-4 rounded-lg shadow-md">
-          <FontAwesomeIcon icon={faKitchenSet} className="h-16 w-full" />
-          <Typography variant="paragraph" className="font-semibold">Kerajinan</Typography>
         </a>
       </div>
     </div>
