@@ -1,28 +1,24 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import TopNavbar from './components/TopNavbar';
 import BottomNavbar from './components/BottomNavbar';
 import Home from './pages/Home';
 import ErrorPage from './pages/ErrorPage';
+import AddProduct from './pages/AddProduct';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Home />,
-    errorElement: <ErrorPage />
-  },
-  {
-    path: '/:path(.*)',
-    element: <ErrorPage />
-  }
-]);
-
-
-export default function App() {
+function App() {
   return (
-    <>
+    <div className='App'>
       <TopNavbar />
-      <RouterProvider router={router} />
-      {/* <BottomNavbar /> */}
-    </>
+      <Router>
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/add' element={<AddProduct />} />
+          <Route path='*' element={<ErrorPage />} />
+        </Routes>
+      </Router>
+      <BottomNavbar />
+    </div>
   );
 }
+
+export default App;

@@ -35,7 +35,7 @@ export default function TopNavbar() {
       <div className="container mx-auto flex flex-wrap items-center justify-between text-blue-gray-900">
         <Typography
           as="a"
-          href="#"
+          href="/"
           className="text-light-green-600 mr-4 cursor-pointer py-1.5 font-bold text-lg tracking-wider"
         >
           GreenBasket
